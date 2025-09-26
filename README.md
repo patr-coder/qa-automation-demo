@@ -6,14 +6,16 @@
 - **Features**: User authentication, API test management, performance testing, test execution tracking, and detailed reporting
 
 ## URLs
-- **Development**: https://3000-ibnkqggzyds5rvs5q9akl-6532622b.e2b.dev
-- **API Health**: https://3000-ibnkqggzyds5rvs5q9akl-6532622b.e2b.dev/api/dashboard/stats
+- **Production**: https://qa-automation-demo.pages.dev
+- **GitHub Repository**: https://github.com/patr-coder/qa-automation-demo
+- **API Health**: https://qa-automation-demo.pages.dev/api/dashboard/stats
 
 ## Currently Completed Features
 
 ### ✅ User Management & Authentication
 - User registration with role-based access (Tester, Developer, Admin)
 - User login with credential validation
+- **User logout functionality** with proper session cleanup and audit logging
 - Terms & conditions acceptance tracking
 - Newsletter subscription management
 - Audit logging for user activities
@@ -34,6 +36,7 @@
 ### ✅ Dashboard & Analytics
 - **Real-time Statistics**: Active users, total tests, test runs, success rates
 - **Test Execution Table**: Recent test runs with status, duration, and success rates
+- **Pagination Support**: Navigate through test results with 10 items per page
 - **Visual Metrics**: Color-coded status indicators and performance charts
 
 ### ✅ UI Testing Interface
@@ -54,9 +57,12 @@
   - **Parameters**: `{username, password}`
 - `POST /api/auth/register` - User registration
   - **Parameters**: `{username, email, password, user_type, accepted_terms, subscribed_newsletter}`
+- `POST /api/auth/logout` - User logout with audit logging
+  - **Parameters**: `{user_id}`
 
 ### API Testing Endpoints
-- `GET /api/tests` - Retrieve all saved API tests
+- `GET /api/tests?page=X&limit=Y` - Retrieve saved API tests with pagination
+  - **Query Parameters**: `page` (default: 1), `limit` (default: 10)
 - `POST /api/tests` - Create new API test
   - **Parameters**: `{name, endpoint_url, http_method, request_body, owner_user_id}`
 - `POST /api/tests/:id/run` - Execute specific API test
@@ -68,7 +74,8 @@
 
 ### Dashboard & Analytics Endpoints
 - `GET /api/dashboard/stats` - Retrieve dashboard statistics
-- `GET /api/runs` - Get recent test execution results
+- `GET /api/runs?page=X&limit=Y` - Get test execution results with pagination
+  - **Query Parameters**: `page` (default: 1), `limit` (default: 10)
 
 ### Utility Endpoints
 - `POST /api/newsletter/subscribe` - Newsletter subscription
@@ -233,7 +240,16 @@ npm run db:migrate:prod
 3. **Caching Layer**: Implement Redis/KV caching for performance optimization
 4. **Error Handling**: Comprehensive error logging and user feedback
 
+## Recent Updates
+
+### Version 1.1.0 - Logout & Pagination Features (September 26, 2025)
+- ✅ **Added User Logout Functionality**: Complete logout with audit logging and UI state management
+- ✅ **Implemented Pagination**: Tables now show 10 items per page with Previous/Next navigation
+- ✅ **Enhanced API Endpoints**: All list endpoints now support pagination query parameters
+- ✅ **Database Connection Fixed**: Resolved local development database issues by deploying to production
+- ✅ **Production Deployment**: Successfully deployed with Cloudflare D1 database integration
+
 ## Last Updated
 **Date**: September 26, 2025
-**Version**: 1.0.0 - Initial Release
-**Status**: Production Ready for Demo Purposes
+**Version**: 1.1.0 - Logout & Pagination Update
+**Status**: Production Ready with Full Database Connectivity
