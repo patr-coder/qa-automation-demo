@@ -131,26 +131,41 @@ app.get('/api/runs/:id', async (c) => {
   try {
     const runId = c.req.param('id')
     
+    // First get the basic test run info
     const run = await c.env.DB.prepare(`
-      SELECT tr.*, 
-             CASE 
-               WHEN tr.suite_id IS NOT NULL THEN ts.name 
-               ELSE at.name 
-             END as test_name,
-             u.username as started_by_name,
-             at.endpoint_url,
-             at.http_method,
-             at.request_body,
-             at.request_headers
+      SELECT tr.*, u.username as started_by_name
       FROM test_runs tr
-      LEFT JOIN test_suites ts ON tr.suite_id = ts.id
-      LEFT JOIN api_tests at ON tr.api_test_id = at.id
       JOIN users u ON tr.started_by = u.id
       WHERE tr.id = ?
     `).bind(runId).first()
     
     if (!run) {
       return c.json({ error: 'Test run not found' }, 404)
+    }
+    
+    // Get test name and API details if it's an API test
+    if (run.api_test_id) {
+      const apiTest = await c.env.DB.prepare(`
+        SELECT name, endpoint_url, http_method, request_body, request_headers
+        FROM api_tests 
+        WHERE id = ?
+      `).bind(run.api_test_id).first()
+      
+      if (apiTest) {
+        run.test_name = apiTest.name
+        run.endpoint_url = apiTest.endpoint_url
+        run.http_method = apiTest.http_method
+        run.request_body = apiTest.request_body
+        run.request_headers = apiTest.request_headers
+      }
+    } else if (run.suite_id) {
+      const suite = await c.env.DB.prepare(`
+        SELECT name FROM test_suites WHERE id = ?
+      `).bind(run.suite_id).first()
+      
+      if (suite) {
+        run.test_name = suite.name
+      }
     }
     
     // Get performance metrics for this run if available
@@ -164,7 +179,8 @@ app.get('/api/runs/:id', async (c) => {
       metrics: metrics.results || []
     })
   } catch (error) {
-    return c.json({ error: 'Failed to fetch test run details' }, 500)
+    console.error('Error fetching test run details:', error)
+    return c.json({ error: 'Failed to fetch test run details', details: error.message }, 500)
   }
 })
 
