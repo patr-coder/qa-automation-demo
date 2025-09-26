@@ -21,14 +21,13 @@
   //     "bucket_name": "my-bucket"
   //   }
   // ],
-  // D1 database will be added after token permissions are updated
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "webapp-production", 
-  //     "database_id": "your-database-id-here"
-  //   }
-  // ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "qa-automation-demo-production",
+      "database_id": "0eeb5668-a8e3-4122-b354-9982f1413d51"
+    }
+  ],
   // "ai": {
   //   "binding": "AI"
   // }
