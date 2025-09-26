@@ -2,6 +2,10 @@
 class QAAutomationApp {
     constructor() {
         this.currentUser = null;
+        this.currentTestsPage = 1;
+        this.currentRunsPage = 1;
+        this.testsPerPage = 10;
+        this.runsPerPage = 10;
         this.init();
     }
 
@@ -9,8 +13,8 @@ class QAAutomationApp {
         this.bindEvents();
         this.showTab('dashboard');
         this.loadDashboardData();
-        this.loadAPITests();
-        this.loadTestRuns();
+        this.loadAPITests(1);
+        this.loadTestRuns(1);
     }
 
     bindEvents() {
@@ -38,7 +42,13 @@ class QAAutomationApp {
         const cancelRegister = document.getElementById('cancelRegister');
 
         loginBtn.addEventListener('click', () => {
-            loginModal.classList.remove('hidden');
+            if (this.currentUser) {
+                // Already logged in, show logout option
+                this.handleLogout();
+            } else {
+                // Not logged in, show login modal
+                loginModal.classList.remove('hidden');
+            }
         });
 
         registerBtn.addEventListener('click', () => {
@@ -176,6 +186,30 @@ class QAAutomationApp {
         }
     }
 
+    async handleLogout() {
+        if (!this.currentUser) {
+            return;
+        }
+
+        try {
+            await axios.post('/api/auth/logout', {
+                user_id: this.currentUser.id
+            });
+
+            this.currentUser = null;
+            this.updateUIForUser();
+            this.showNotification('Logout successful!', 'success');
+            
+            // Reset to dashboard and refresh data
+            this.showTab('dashboard');
+            this.loadDashboardData();
+            this.loadAPITests(1);
+            this.loadTestRuns(1);
+        } catch (error) {
+            this.showNotification('Logout failed', 'error');
+        }
+    }
+
     async handleCreateAPITest() {
         if (!this.currentUser) {
             this.showNotification('Please login first', 'error');
@@ -199,7 +233,7 @@ class QAAutomationApp {
 
             this.showNotification('API test created successfully!', 'success');
             document.getElementById('apiTestForm').reset();
-            this.loadAPITests(); // Reload the tests list
+            this.loadAPITests(this.currentTestsPage); // Reload the tests list
         } catch (error) {
             this.showNotification(error.response?.data?.error || 'Failed to create test', 'error');
         }
@@ -240,7 +274,7 @@ class QAAutomationApp {
             });
 
             this.displayTestResult(runResponse.data);
-            this.loadTestRuns(); // Refresh test runs
+            this.loadTestRuns(1); // Refresh test runs
         } catch (error) {
             this.showNotification(error.response?.data?.error || 'Failed to run test', 'error');
         }
@@ -346,13 +380,17 @@ class QAAutomationApp {
         }
     }
 
-    async loadAPITests() {
+    async loadAPITests(page = 1) {
         try {
-            const response = await axios.get('/api/tests');
-            const tests = response.data.tests;
+            const response = await axios.get(`/api/tests?page=${page}&limit=${this.testsPerPage}`);
+            const { tests, pagination } = response.data;
 
             const container = document.getElementById('savedTests');
             container.innerHTML = '';
+
+            // Create tests grid
+            const testsGrid = document.createElement('div');
+            testsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6';
 
             tests.forEach(test => {
                 const testCard = document.createElement('div');
@@ -368,22 +406,48 @@ class QAAutomationApp {
                         </button>
                     </div>
                 `;
-                container.appendChild(testCard);
+                testsGrid.appendChild(testCard);
             });
+
+            container.appendChild(testsGrid);
+
+            // Add pagination controls
+            if (pagination.totalPages > 1) {
+                const paginationDiv = document.createElement('div');
+                paginationDiv.className = 'flex justify-center items-center space-x-2';
+                paginationDiv.innerHTML = `
+                    <button ${!pagination.hasPrev ? 'disabled' : ''} 
+                            onclick="app.loadAPITests(${page - 1})" 
+                            class="px-3 py-1 rounded ${pagination.hasPrev ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span class="text-sm text-gray-600">
+                        Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} tests)
+                    </span>
+                    <button ${!pagination.hasNext ? 'disabled' : ''} 
+                            onclick="app.loadAPITests(${page + 1})" 
+                            class="px-3 py-1 rounded ${pagination.hasNext ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                `;
+                container.appendChild(paginationDiv);
+            }
+
+            this.currentTestsPage = page;
         } catch (error) {
             console.error('Failed to load API tests:', error);
         }
     }
 
-    async loadTestRuns() {
+    async loadTestRuns(page = 1) {
         try {
-            const response = await axios.get('/api/runs');
-            const runs = response.data.runs;
+            const response = await axios.get(`/api/runs?page=${page}&limit=${this.runsPerPage}`);
+            const { runs, pagination } = response.data;
 
             const tbody = document.getElementById('testRunsTable');
             tbody.innerHTML = '';
 
-            runs.slice(0, 10).forEach(run => { // Show only recent 10 runs
+            runs.forEach(run => {
                 const row = document.createElement('tr');
                 const statusClass = run.status === 'passed' ? 'status-passed' : 
                                   run.status === 'failed' ? 'status-failed' :
@@ -406,6 +470,39 @@ class QAAutomationApp {
                 `;
                 tbody.appendChild(row);
             });
+
+            // Add pagination controls below the table
+            const tableContainer = document.querySelector('#testRunsTable').parentElement.parentElement;
+            let paginationContainer = document.getElementById('runsPagination');
+            
+            if (!paginationContainer) {
+                paginationContainer = document.createElement('div');
+                paginationContainer.id = 'runsPagination';
+                paginationContainer.className = 'mt-4 flex justify-center items-center space-x-2';
+                tableContainer.appendChild(paginationContainer);
+            }
+
+            if (pagination.totalPages > 1) {
+                paginationContainer.innerHTML = `
+                    <button ${!pagination.hasPrev ? 'disabled' : ''} 
+                            onclick="app.loadTestRuns(${page - 1})" 
+                            class="px-3 py-1 rounded ${pagination.hasPrev ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span class="text-sm text-gray-600">
+                        Page ${pagination.page} of ${pagination.totalPages} (${pagination.total} runs)
+                    </span>
+                    <button ${!pagination.hasNext ? 'disabled' : ''} 
+                            onclick="app.loadTestRuns(${page + 1})" 
+                            class="px-3 py-1 rounded ${pagination.hasNext ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                `;
+            } else {
+                paginationContainer.innerHTML = '';
+            }
+
+            this.currentRunsPage = page;
         } catch (error) {
             console.error('Failed to load test runs:', error);
         }
@@ -423,7 +520,7 @@ class QAAutomationApp {
             });
 
             this.displayTestResult(response.data);
-            this.loadTestRuns();
+            this.loadTestRuns(this.currentRunsPage);
             this.showNotification('Test executed successfully!', 'success');
         } catch (error) {
             this.showNotification(error.response?.data?.error || 'Failed to run test', 'error');
@@ -447,9 +544,17 @@ class QAAutomationApp {
     }
 
     updateUIForUser() {
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        
         if (this.currentUser) {
-            document.getElementById('loginBtn').innerHTML = `<i class="fas fa-user mr-2"></i>${this.currentUser.username}`;
-            document.getElementById('registerBtn').style.display = 'none';
+            loginBtn.innerHTML = `<i class="fas fa-sign-out-alt mr-2"></i>Logout (${this.currentUser.username})`;
+            loginBtn.className = 'bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors';
+            registerBtn.style.display = 'none';
+        } else {
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Login';
+            loginBtn.className = 'bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors';
+            registerBtn.style.display = 'inline-block';
         }
     }
 

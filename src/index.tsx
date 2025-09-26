@@ -107,17 +107,60 @@ app.post('/api/auth/register', async (c) => {
   }
 })
 
-// API Test Management
+// Logout endpoint
+app.post('/api/auth/logout', async (c) => {
+  try {
+    const { user_id } = await c.req.json()
+    
+    if (user_id) {
+      // Log the logout activity
+      await c.env.DB.prepare(`
+        INSERT INTO audit_logs (user_id, action, resource_type, details)
+        VALUES (?, 'logout', 'user', ?)
+      `).bind(user_id, JSON.stringify({ timestamp: new Date().toISOString() })).run()
+    }
+
+    return c.json({ message: 'Logout successful' })
+  } catch (error) {
+    return c.json({ error: 'Internal server error' }, 500)
+  }
+})
+
+// API Test Management with pagination
 app.get('/api/tests', async (c) => {
   try {
+    const page = parseInt(c.req.query('page') || '1')
+    const limit = parseInt(c.req.query('limit') || '10')
+    const offset = (page - 1) * limit
+
+    // Get total count
+    const countResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as total FROM api_tests
+    `).first()
+
+    // Get paginated results
     const tests = await c.env.DB.prepare(`
       SELECT at.*, u.username as owner_name
       FROM api_tests at
       JOIN users u ON at.owner_user_id = u.id
       ORDER BY at.created_at DESC
-    `).all()
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all()
 
-    return c.json({ tests: tests.results })
+    const total = countResult.total
+    const totalPages = Math.ceil(total / limit)
+
+    return c.json({ 
+      tests: tests.results,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    })
   } catch (error) {
     return c.json({ error: 'Failed to fetch tests' }, 500)
   }
@@ -248,9 +291,19 @@ app.post('/api/tests/:id/run', async (c) => {
   }
 })
 
-// Test Run Results
+// Test Run Results with pagination
 app.get('/api/runs', async (c) => {
   try {
+    const page = parseInt(c.req.query('page') || '1')
+    const limit = parseInt(c.req.query('limit') || '10')
+    const offset = (page - 1) * limit
+
+    // Get total count
+    const countResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as total FROM test_runs
+    `).first()
+
+    // Get paginated results
     const runs = await c.env.DB.prepare(`
       SELECT tr.*, 
              CASE 
@@ -263,10 +316,23 @@ app.get('/api/runs', async (c) => {
       LEFT JOIN api_tests at ON tr.api_test_id = at.id
       JOIN users u ON tr.started_by = u.id
       ORDER BY tr.created_at DESC
-      LIMIT 50
-    `).all()
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all()
 
-    return c.json({ runs: runs.results })
+    const total = countResult.total
+    const totalPages = Math.ceil(total / limit)
+
+    return c.json({ 
+      runs: runs.results,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    })
   } catch (error) {
     return c.json({ error: 'Failed to fetch test runs' }, 500)
   }
