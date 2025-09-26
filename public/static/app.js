@@ -63,8 +63,50 @@ class QAAutomationApp {
             registerModal.classList.add('hidden');
         });
 
+        // View Details Modal events
+        const viewDetailsModal = document.getElementById('viewDetailsModal');
+        const closeDetailsModal = document.getElementById('closeDetailsModal');
+        
+        closeDetailsModal.addEventListener('click', () => {
+            viewDetailsModal.classList.add('hidden');
+        });
+
+        // Confirmation Modal events
+        const confirmationModal = document.getElementById('confirmationModal');
+        const cancelConfirmation = document.getElementById('cancelConfirmation');
+        const confirmAction = document.getElementById('confirmAction');
+        
+        cancelConfirmation.addEventListener('click', () => {
+            confirmationModal.classList.add('hidden');
+        });
+
+        confirmAction.addEventListener('click', () => {
+            if (this.pendingAction) {
+                this.pendingAction();
+                this.pendingAction = null;
+            }
+            confirmationModal.classList.add('hidden');
+        });
+
+        // Details modal action buttons
+        const deleteRunBtn = document.getElementById('deleteRunBtn');
+        const rerunTestBtn = document.getElementById('rerunTestBtn');
+        
+        deleteRunBtn.addEventListener('click', () => {
+            if (this.currentRunId) {
+                // Close details modal and show confirmation
+                viewDetailsModal.classList.add('hidden');
+                this.confirmDeleteRun(this.currentRunId, document.getElementById('detailTestName').textContent);
+            }
+        });
+
+        rerunTestBtn.addEventListener('click', () => {
+            // TODO: Implement rerun functionality
+            this.showNotification('Rerun functionality coming soon!', 'info');
+        });
+
         // Close modals when clicking outside
-        [loginModal, registerModal].forEach(modal => {
+        [loginModal, registerModal, viewDetailsModal, confirmationModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.add('hidden');
@@ -401,9 +443,14 @@ class QAAutomationApp {
                     <p class="text-sm text-gray-500 mb-3">Method: ${test.http_method}</p>
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-400">by ${test.owner_name}</span>
-                        <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
-                            <i class="fas fa-play mr-1"></i>Run
-                        </button>
+                        <div class="flex space-x-2">
+                            <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                                <i class="fas fa-play mr-1"></i>Run
+                            </button>
+                            <button onclick="app.confirmDeleteTest(${test.id}, '${test.name}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
                     </div>
                 `;
                 testsGrid.appendChild(testCard);
@@ -465,7 +512,14 @@ class QAAutomationApp {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${run.duration_ms ? (run.duration_ms / 1000).toFixed(1) + 's' : '--'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${run.success_rate ? run.success_rate.toFixed(1) + '%' : '--'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900">View Details</button>
+                        <div class="flex space-x-2">
+                            <button onclick="app.viewTestRunDetails(${run.id})" class="text-indigo-600 hover:text-indigo-900 text-sm">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </button>
+                            <button onclick="app.confirmDeleteRun(${run.id}, '${run.test_name || 'Unknown Test'}')" class="text-red-600 hover:text-red-900 text-sm">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -558,6 +612,129 @@ class QAAutomationApp {
         }
     }
 
+    async viewTestRunDetails(runId) {
+        try {
+            const response = await axios.get(`/api/runs/${runId}`);
+            const { run, metrics } = response.data;
+            
+            // Populate modal with run details
+            document.getElementById('detailTestName').textContent = run.test_name || 'Unknown Test';
+            document.getElementById('detailRunId').textContent = run.id;
+            document.getElementById('detailStatus').textContent = run.status.toUpperCase();
+            document.getElementById('detailStartedBy').textContent = run.started_by_name;
+            document.getElementById('detailStartedAt').textContent = new Date(run.started_at).toLocaleString();
+            document.getElementById('detailFinishedAt').textContent = run.finished_at ? new Date(run.finished_at).toLocaleString() : 'Not finished';
+            document.getElementById('detailDuration').textContent = run.duration_ms ? (run.duration_ms / 1000).toFixed(1) + ' seconds' : 'Not available';
+            document.getElementById('detailSuccessRate').textContent = run.success_rate ? run.success_rate.toFixed(1) + '%' : 'Not available';
+            
+            // API Test details
+            if (run.endpoint_url) {
+                document.getElementById('detailEndpoint').textContent = run.endpoint_url;
+                document.getElementById('detailHttpMethod').textContent = run.http_method || 'GET';
+                document.getElementById('detailHeaders').textContent = run.request_headers || '{}';
+                document.getElementById('detailRequestBody').textContent = run.request_body || '(empty)';
+                document.getElementById('apiTestDetails').classList.remove('hidden');
+            } else {
+                document.getElementById('apiTestDetails').classList.add('hidden');
+            }
+            
+            // Performance metrics
+            document.getElementById('detailTotalRequests').textContent = run.total_requests || 0;
+            document.getElementById('detailSuccessCount').textContent = run.success_count || 0;
+            document.getElementById('detailFailedCount').textContent = run.failed_count || 0;
+            document.getElementById('detailSkippedCount').textContent = run.skipped_count || 0;
+            
+            // Additional metrics if available
+            if (metrics && metrics.length > 0) {
+                const metricsContent = document.getElementById('metricsContent');
+                metricsContent.innerHTML = metrics.map(metric => `
+                    <div class="mb-2">
+                        <span class="font-medium">${metric.metric_name}:</span> ${metric.metric_value}
+                    </div>
+                `).join('');
+                document.getElementById('additionalMetrics').classList.remove('hidden');
+            } else {
+                document.getElementById('additionalMetrics').classList.add('hidden');
+            }
+            
+            // Store run ID for delete action
+            this.currentRunId = runId;
+            
+            // Show modal
+            document.getElementById('viewDetailsModal').classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Error fetching run details:', error);
+            this.showNotification('Failed to load test run details', 'error');
+        }
+    }
+    
+    confirmDeleteRun(runId, testName) {
+        if (!this.currentUser) {
+            this.showNotification('Please login first', 'error');
+            return;
+        }
+        
+        const message = `Are you sure you want to delete the test run "${testName}"? This action cannot be undone.`;
+        document.getElementById('confirmationMessage').textContent = message;
+        
+        this.pendingAction = () => this.deleteTestRun(runId);
+        document.getElementById('confirmationModal').classList.remove('hidden');
+    }
+    
+    async deleteTestRun(runId) {
+        try {
+            await axios.delete(`/api/runs/${runId}`, {
+                data: { user_id: this.currentUser.id }
+            });
+            
+            this.showNotification('Test run deleted successfully', 'success');
+            
+            // Refresh the test runs table
+            this.loadTestRuns(this.currentRunsPage);
+            
+            // Close the details modal if it's open
+            document.getElementById('viewDetailsModal').classList.add('hidden');
+            
+        } catch (error) {
+            console.error('Error deleting test run:', error);
+            this.showNotification('Failed to delete test run', 'error');
+        }
+    }
+    
+    confirmDeleteTest(testId, testName) {
+        if (!this.currentUser) {
+            this.showNotification('Please login first', 'error');
+            return;
+        }
+        
+        const message = `Are you sure you want to delete the API test "${testName}"? This will also delete all associated test runs. This action cannot be undone.`;
+        document.getElementById('confirmationMessage').textContent = message;
+        
+        this.pendingAction = () => this.deleteAPITest(testId);
+        document.getElementById('confirmationModal').classList.remove('hidden');
+    }
+    
+    async deleteAPITest(testId) {
+        try {
+            await axios.delete(`/api/tests/${testId}`, {
+                data: { user_id: this.currentUser.id }
+            });
+            
+            this.showNotification('API test deleted successfully', 'success');
+            
+            // Refresh the API tests
+            this.loadAPITests(this.currentTestsPage);
+            
+            // Also refresh test runs since they might be affected
+            this.loadTestRuns(this.currentRunsPage);
+            
+        } catch (error) {
+            console.error('Error deleting API test:', error);
+            this.showNotification('Failed to delete API test', 'error');
+        }
+    }
+    
     showNotification(message, type = 'info') {
         // Create notification element
         const notification = document.createElement('div');

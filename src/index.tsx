@@ -126,6 +126,137 @@ app.post('/api/auth/logout', async (c) => {
   }
 })
 
+// Get detailed information for a specific test run
+app.get('/api/runs/:id', async (c) => {
+  try {
+    const runId = c.req.param('id')
+    
+    const run = await c.env.DB.prepare(`
+      SELECT tr.*, 
+             CASE 
+               WHEN tr.suite_id IS NOT NULL THEN ts.name 
+               ELSE at.name 
+             END as test_name,
+             u.username as started_by_name,
+             at.endpoint_url,
+             at.http_method,
+             at.request_body,
+             at.request_headers
+      FROM test_runs tr
+      LEFT JOIN test_suites ts ON tr.suite_id = ts.id
+      LEFT JOIN api_tests at ON tr.api_test_id = at.id
+      JOIN users u ON tr.started_by = u.id
+      WHERE tr.id = ?
+    `).bind(runId).first()
+    
+    if (!run) {
+      return c.json({ error: 'Test run not found' }, 404)
+    }
+    
+    // Get performance metrics for this run if available
+    const metrics = await c.env.DB.prepare(`
+      SELECT * FROM performance_metrics 
+      WHERE test_run_id = ?
+    `).bind(runId).all()
+    
+    return c.json({ 
+      run,
+      metrics: metrics.results || []
+    })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch test run details' }, 500)
+  }
+})
+
+// Delete a test run
+app.delete('/api/runs/:id', async (c) => {
+  try {
+    const runId = c.req.param('id')
+    const { user_id } = await c.req.json()
+    
+    // Check if the run exists
+    const run = await c.env.DB.prepare(`
+      SELECT * FROM test_runs WHERE id = ?
+    `).bind(runId).first()
+    
+    if (!run) {
+      return c.json({ error: 'Test run not found' }, 404)
+    }
+    
+    // Delete associated performance metrics first
+    await c.env.DB.prepare(`
+      DELETE FROM performance_metrics WHERE test_run_id = ?
+    `).bind(runId).run()
+    
+    // Delete the test run
+    await c.env.DB.prepare(`
+      DELETE FROM test_runs WHERE id = ?
+    `).bind(runId).run()
+    
+    // Log the deletion
+    if (user_id) {
+      await c.env.DB.prepare(`
+        INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
+        VALUES (?, 'delete', 'test_run', ?, ?)
+      `).bind(user_id, runId, JSON.stringify({ 
+        test_name: run.name,
+        deleted_at: new Date().toISOString() 
+      })).run()
+    }
+    
+    return c.json({ message: 'Test run deleted successfully' })
+  } catch (error) {
+    return c.json({ error: 'Failed to delete test run' }, 500)
+  }
+})
+
+// Delete an API test
+app.delete('/api/tests/:id', async (c) => {
+  try {
+    const testId = c.req.param('id')
+    const { user_id } = await c.req.json()
+    
+    // Check if the test exists
+    const test = await c.env.DB.prepare(`
+      SELECT * FROM api_tests WHERE id = ?
+    `).bind(testId).first()
+    
+    if (!test) {
+      return c.json({ error: 'API test not found' }, 404)
+    }
+    
+    // Delete associated test runs and metrics first
+    await c.env.DB.prepare(`
+      DELETE FROM performance_metrics 
+      WHERE test_run_id IN (SELECT id FROM test_runs WHERE api_test_id = ?)
+    `).bind(testId).run()
+    
+    await c.env.DB.prepare(`
+      DELETE FROM test_runs WHERE api_test_id = ?
+    `).bind(testId).run()
+    
+    // Delete the test
+    await c.env.DB.prepare(`
+      DELETE FROM api_tests WHERE id = ?
+    `).bind(testId).run()
+    
+    // Log the deletion
+    if (user_id) {
+      await c.env.DB.prepare(`
+        INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
+        VALUES (?, 'delete', 'api_test', ?, ?)
+      `).bind(user_id, testId, JSON.stringify({ 
+        test_name: test.name,
+        deleted_at: new Date().toISOString() 
+      })).run()
+    }
+    
+    return c.json({ message: 'API test deleted successfully' })
+  } catch (error) {
+    return c.json({ error: 'Failed to delete API test' }, 500)
+  }
+})
+
 // API Test Management with pagination
 app.get('/api/tests', async (c) => {
   try {
@@ -881,6 +1012,125 @@ app.get('/', (c) => {
                                 <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Register</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Details Modal -->
+        <div id="viewDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">Test Run Details</h2>
+                            <button id="closeDetailsModal" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Test Run Information -->
+                        <div id="testRunDetails" class="space-y-6">
+                            <!-- Basic Info -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h3 class="font-semibold text-gray-700 mb-3">Test Information</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div><span class="font-medium">Test Name:</span> <span id="detailTestName">-</span></div>
+                                        <div><span class="font-medium">Run ID:</span> <span id="detailRunId">-</span></div>
+                                        <div><span class="font-medium">Status:</span> <span id="detailStatus">-</span></div>
+                                        <div><span class="font-medium">Started By:</span> <span id="detailStartedBy">-</span></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h3 class="font-semibold text-gray-700 mb-3">Execution Details</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div><span class="font-medium">Started At:</span> <span id="detailStartedAt">-</span></div>
+                                        <div><span class="font-medium">Finished At:</span> <span id="detailFinishedAt">-</span></div>
+                                        <div><span class="font-medium">Duration:</span> <span id="detailDuration">-</span></div>
+                                        <div><span class="font-medium">Success Rate:</span> <span id="detailSuccessRate">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- API Test Details (if available) -->
+                            <div id="apiTestDetails" class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-blue-700 mb-3">API Test Configuration</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div><span class="font-medium">Endpoint:</span> <span id="detailEndpoint">-</span></div>
+                                    <div><span class="font-medium">HTTP Method:</span> <span id="detailHttpMethod">-</span></div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="font-medium mb-1">Request Headers:</div>
+                                    <pre id="detailHeaders" class="bg-white p-2 rounded text-xs overflow-x-auto">-</pre>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="font-medium mb-1">Request Body:</div>
+                                    <pre id="detailRequestBody" class="bg-white p-2 rounded text-xs overflow-x-auto">-</pre>
+                                </div>
+                            </div>
+
+                            <!-- Performance Metrics -->
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-green-700 mb-3">Performance Metrics</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div class="text-center">
+                                        <div class="font-medium">Total Requests</div>
+                                        <div id="detailTotalRequests" class="text-lg font-bold text-green-600">-</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-medium">Successful</div>
+                                        <div id="detailSuccessCount" class="text-lg font-bold text-green-600">-</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-medium">Failed</div>
+                                        <div id="detailFailedCount" class="text-lg font-bold text-red-600">-</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-medium">Skipped</div>
+                                        <div id="detailSkippedCount" class="text-lg font-bold text-gray-600">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Metrics (if available) -->
+                            <div id="additionalMetrics" class="bg-purple-50 p-4 rounded-lg hidden">
+                                <h3 class="font-semibold text-purple-700 mb-3">Detailed Performance Metrics</h3>
+                                <div id="metricsContent" class="text-sm">
+                                    <!-- Dynamic metrics will be loaded here -->
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex justify-end space-x-4 pt-4 border-t">
+                                <button id="deleteRunBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                                    <i class="fas fa-trash mr-2"></i>Delete Run
+                                </button>
+                                <button id="rerunTestBtn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                                    <i class="fas fa-redo mr-2"></i>Run Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-2xl mr-3"></i>
+                            <h2 class="text-xl font-bold">Confirm Action</h2>
+                        </div>
+                        <p id="confirmationMessage" class="text-gray-600 mb-6">Are you sure you want to proceed?</p>
+                        <div class="flex justify-end space-x-4">
+                            <button id="cancelConfirmation" class="px-4 py-2 text-gray-600 border rounded-lg hover:bg-gray-50">Cancel</button>
+                            <button id="confirmAction" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Confirm</button>
+                        </div>
                     </div>
                 </div>
             </div>
