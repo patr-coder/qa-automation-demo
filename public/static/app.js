@@ -441,14 +441,14 @@ class QAAutomationApp {
                     <h4 class="font-semibold text-lg mb-2">${test.name}</h4>
                     <p class="text-sm text-gray-600 mb-2">${test.endpoint_url}</p>
                     <p class="text-sm text-gray-500 mb-3">Method: ${test.http_method}</p>
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-end">
                         <span class="text-xs text-gray-400">by ${test.owner_name}</span>
-                        <div class="flex space-x-2">
-                            <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
-                                <i class="fas fa-play mr-1"></i>Run
+                        <div class="flex space-x-3 mt-2">
+                            <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200 shadow-sm flex items-center">
+                                <i class="fas fa-play mr-2"></i>Run
                             </button>
-                            <button onclick="app.confirmDeleteTest(${test.id}, '${test.name}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                                <i class="fas fa-trash mr-1"></i>Delete
+                            <button onclick="app.confirmDeleteTest(${test.id}, '${test.name}')" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors duration-200 shadow-sm flex items-center">
+                                <i class="fas fa-trash mr-2"></i>Delete
                             </button>
                         </div>
                     </div>
@@ -513,10 +513,10 @@ class QAAutomationApp {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${run.success_rate ? run.success_rate.toFixed(1) + '%' : '--'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
-                            <button onclick="app.viewTestRunDetails(${run.id})" class="text-indigo-600 hover:text-indigo-900 text-sm">
+                            <button onclick="app.viewTestRunDetails(${run.id})" class="bg-blue-500 text-white px-3 py-1 rounded-md text-xs font-medium hover:bg-blue-600 transition-colors duration-200 flex items-center">
                                 <i class="fas fa-eye mr-1"></i>View Details
                             </button>
-                            <button onclick="app.confirmDeleteRun(${run.id}, '${run.test_name || 'Unknown Test'}')" class="text-red-600 hover:text-red-900 text-sm">
+                            <button onclick="app.confirmDeleteRun(${run.id}, '${run.test_name || 'Unknown Test'}')" class="bg-red-500 text-white px-3 py-1 rounded-md text-xs font-medium hover:bg-red-600 transition-colors duration-200 flex items-center">
                                 <i class="fas fa-trash mr-1"></i>Delete
                             </button>
                         </div>
