@@ -445,6 +445,17 @@ class QAAutomationApp {
             console.error('Failed to load dashboard data:', error);
         }
     }
+    
+    getMethodColor(method) {
+        const colors = {
+            'GET': 'bg-blue-100 text-blue-800',
+            'POST': 'bg-green-100 text-green-800',
+            'PUT': 'bg-yellow-100 text-yellow-800',
+            'PATCH': 'bg-orange-100 text-orange-800',
+            'DELETE': 'bg-red-100 text-red-800'
+        };
+        return colors[method] || 'bg-gray-100 text-gray-800';
+    }
 
     async loadAPITests(page = 1) {
         try {
@@ -456,18 +467,60 @@ class QAAutomationApp {
 
             // Create tests grid
             const testsGrid = document.createElement('div');
-            testsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6';
+            testsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6';
 
             tests.forEach(test => {
                 const testCard = document.createElement('div');
-                testCard.className = 'bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow';
+                testCard.className = 'bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow';
+                
+                // Parse and display request body if available
+                let requestBodyDisplay = '';
+                if (test.request_body && test.request_body.trim() !== '') {
+                    try {
+                        const parsed = JSON.parse(test.request_body);
+                        const bodyPreview = JSON.stringify(parsed, null, 2);
+                        // Limit preview to first 3 lines
+                        const lines = bodyPreview.split('\\n');
+                        const preview = lines.slice(0, 3).join('\\n');
+                        const hasMore = lines.length > 3;
+                        requestBodyDisplay = `
+                            <div class="mt-3 mb-3">
+                                <p class="text-xs font-medium text-gray-700 mb-1">Request Body (JSON):</p>
+                                <pre class="text-xs bg-gray-50 p-2 rounded border overflow-x-auto text-gray-600">${preview}${hasMore ? '\\n...' : ''}</pre>
+                            </div>
+                        `;
+                    } catch (e) {
+                        requestBodyDisplay = `
+                            <div class="mt-3 mb-3">
+                                <p class="text-xs font-medium text-gray-700 mb-1">Request Body:</p>
+                                <pre class="text-xs bg-gray-50 p-2 rounded border overflow-x-auto text-gray-600">${test.request_body.substring(0, 100)}${test.request_body.length > 100 ? '...' : ''}</pre>
+                            </div>
+                        `;
+                    }
+                }
+                
                 testCard.innerHTML = `
-                    <h4 class="font-semibold text-lg mb-2">${test.name}</h4>
-                    <p class="text-sm text-gray-600 mb-2">${test.endpoint_url}</p>
-                    <p class="text-sm text-gray-500 mb-3">Method: ${test.http_method}</p>
-                    <div class="flex justify-between items-end">
+                    <div class="mb-4">
+                        <h4 class="font-bold text-lg text-gray-900 mb-3">${test.name}</h4>
+                        
+                        <div class="space-y-2 mb-4">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 mb-1">API Endpoint:</p>
+                                <p class="text-sm text-gray-700 break-all">${test.endpoint_url}</p>
+                            </div>
+                            
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 mb-1">HTTP Method:</p>
+                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${this.getMethodColor(test.http_method)}">${test.http_method}</span>
+                            </div>
+                        </div>
+                        
+                        ${requestBodyDisplay}
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-3 border-t border-gray-100">
                         <span class="text-xs text-gray-400">by ${test.owner_name}</span>
-                        <div class="flex space-x-3 mt-2">
+                        <div class="flex space-x-2">
                             <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200 shadow-sm flex items-center">
                                 <i class="fas fa-play mr-2"></i>Run
                             </button>
