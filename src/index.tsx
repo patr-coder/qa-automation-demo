@@ -188,61 +188,51 @@ app.get('/api/runs/:id', async (c) => {
 app.delete('/api/runs/:id', async (c) => {
   try {
     const runId = c.req.param('id')
-    const { user_id } = await c.req.json()
+    
+    // Try to get request body - handle both JSON and empty body
+    let user_id = null
+    try {
+      const body = await c.req.json()
+      user_id = body.user_id
+    } catch (bodyError) {
+      console.log('No body provided, continuing with deletion')
+    }
     
     console.log('Delete request for run:', runId, 'by user:', user_id)
     
-    // Check if the run exists
+    // Check if the run exists first
     const run = await c.env.DB.prepare(`
-      SELECT * FROM test_runs WHERE id = ?
+      SELECT id, name FROM test_runs WHERE id = ?
     `).bind(runId).first()
-    
-    console.log('Found run:', run)
     
     if (!run) {
       return c.json({ error: 'Test run not found' }, 404)
     }
     
-    try {
-      // Delete associated performance metrics first (ignore if no metrics exist)
-      await c.env.DB.prepare(`
-        DELETE FROM performance_metrics WHERE test_run_id = ?
-      `).bind(runId).run()
-      
-      console.log('Deleted performance metrics for run:', runId)
-    } catch (metricsError) {
-      console.log('No performance metrics to delete or error:', metricsError)
-    }
+    console.log('Found run to delete:', run)
     
-    // Delete the test run
+    // Simple delete without cascading for now
     const deleteResult = await c.env.DB.prepare(`
       DELETE FROM test_runs WHERE id = ?
     `).bind(runId).run()
     
     console.log('Delete result:', deleteResult)
     
-    // Try to log the deletion (don't fail if this doesn't work)
-    try {
-      if (user_id) {
-        await c.env.DB.prepare(`
-          INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
-          VALUES (?, ?, ?, ?, ?)
-        `).bind(user_id, 'delete', 'test_run', runId, JSON.stringify({ 
-          test_name: run.name,
-          deleted_at: new Date().toISOString() 
-        })).run()
-        
-        console.log('Audit log created for deletion')
-      }
-    } catch (auditError) {
-      console.log('Failed to create audit log:', auditError)
-      // Continue anyway - deletion succeeded
+    if (deleteResult.success) {
+      return c.json({ 
+        message: 'Test run deleted successfully',
+        deleted_id: runId
+      })
+    } else {
+      return c.json({ error: 'Failed to delete test run' }, 500)
     }
     
-    return c.json({ message: 'Test run deleted successfully' })
   } catch (error) {
     console.error('Delete error:', error)
-    return c.json({ error: 'Failed to delete test run', details: error.message }, 500)
+    return c.json({ 
+      error: 'Failed to delete test run', 
+      details: error.message || 'Unknown error'
+    }, 500)
   }
 })
 
@@ -250,73 +240,51 @@ app.delete('/api/runs/:id', async (c) => {
 app.delete('/api/tests/:id', async (c) => {
   try {
     const testId = c.req.param('id')
-    const { user_id } = await c.req.json()
+    
+    // Try to get request body - handle both JSON and empty body
+    let user_id = null
+    try {
+      const body = await c.req.json()
+      user_id = body.user_id
+    } catch (bodyError) {
+      console.log('No body provided, continuing with deletion')
+    }
     
     console.log('Delete request for test:', testId, 'by user:', user_id)
     
     // Check if the test exists
     const test = await c.env.DB.prepare(`
-      SELECT * FROM api_tests WHERE id = ?
+      SELECT id, name FROM api_tests WHERE id = ?
     `).bind(testId).first()
     
     if (!test) {
       return c.json({ error: 'API test not found' }, 404)
     }
     
-    console.log('Found test:', test.name)
+    console.log('Found test to delete:', test)
     
-    try {
-      // Delete associated performance metrics first
-      await c.env.DB.prepare(`
-        DELETE FROM performance_metrics 
-        WHERE test_run_id IN (SELECT id FROM test_runs WHERE api_test_id = ?)
-      `).bind(testId).run()
-      
-      console.log('Deleted performance metrics for test:', testId)
-    } catch (metricsError) {
-      console.log('No performance metrics to delete or error:', metricsError)
-    }
-    
-    try {
-      // Delete associated test runs
-      await c.env.DB.prepare(`
-        DELETE FROM test_runs WHERE api_test_id = ?
-      `).bind(testId).run()
-      
-      console.log('Deleted test runs for test:', testId)
-    } catch (runsError) {
-      console.log('No test runs to delete or error:', runsError)
-    }
-    
-    // Delete the test itself
+    // Simple delete - let database handle cascading if configured
     const deleteResult = await c.env.DB.prepare(`
       DELETE FROM api_tests WHERE id = ?
     `).bind(testId).run()
     
     console.log('Delete test result:', deleteResult)
     
-    // Try to log the deletion (don't fail if this doesn't work)
-    try {
-      if (user_id) {
-        await c.env.DB.prepare(`
-          INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
-          VALUES (?, ?, ?, ?, ?)
-        `).bind(user_id, 'delete', 'api_test', testId, JSON.stringify({ 
-          test_name: test.name,
-          deleted_at: new Date().toISOString() 
-        })).run()
-        
-        console.log('Audit log created for test deletion')
-      }
-    } catch (auditError) {
-      console.log('Failed to create audit log:', auditError)
-      // Continue anyway - deletion succeeded
+    if (deleteResult.success) {
+      return c.json({ 
+        message: 'API test deleted successfully',
+        deleted_id: testId
+      })
+    } else {
+      return c.json({ error: 'Failed to delete API test' }, 500)
     }
     
-    return c.json({ message: 'API test deleted successfully' })
   } catch (error) {
     console.error('Delete test error:', error)
-    return c.json({ error: 'Failed to delete API test', details: error.message }, 500)
+    return c.json({ 
+      error: 'Failed to delete API test', 
+      details: error.message || 'Unknown error'
+    }, 500)
   }
 })
 
