@@ -651,8 +651,9 @@ app.get('/', (c) => {
             <div class="bg-white rounded-lg card-shadow overflow-hidden">
                 
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-gray-800 to-blue-600 text-white p-6">
-                    <div class="flex items-center justify-between">
+                <div class="bg-gradient-to-r from-gray-800 to-blue-600 text-white p-4 md:p-6">
+                    <!-- Desktop Layout -->
+                    <div class="hidden md:flex items-center justify-between">
                         <div>
                             <h1 class="text-3xl font-bold flex items-center">
                                 <i class="fas fa-vial mr-3"></i>
@@ -668,6 +669,25 @@ app.get('/', (c) => {
                                 <i class="fas fa-user-plus mr-2"></i>Register
                             </button>
                         </div>
+                    </div>
+                    
+                    <!-- Mobile Layout -->
+                    <div class="md:hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-vial mr-2 text-lg"></i>
+                                <h1 class="text-lg font-bold">QA Automation Demo Portal</h1>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="loginBtnMobile" class="bg-white text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm">
+                                    <i class="fas fa-sign-in-alt mr-1"></i>Login
+                                </button>
+                                <button id="registerBtnMobile" class="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm">
+                                    <i class="fas fa-user-plus mr-1"></i>Register
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-blue-100 text-sm">Professional Test Automation & API Testing Platform</p>
                     </div>
                 </div>
 

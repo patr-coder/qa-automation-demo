@@ -36,24 +36,48 @@ class QAAutomationApp {
     bindModalEvents() {
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
+        const loginBtnMobile = document.getElementById('loginBtnMobile');
+        const registerBtnMobile = document.getElementById('registerBtnMobile');
         const loginModal = document.getElementById('loginModal');
         const registerModal = document.getElementById('registerModal');
         const cancelLogin = document.getElementById('cancelLogin');
         const cancelRegister = document.getElementById('cancelRegister');
 
-        loginBtn.addEventListener('click', () => {
-            if (this.currentUser) {
-                // Already logged in, show logout option
-                this.handleLogout();
-            } else {
-                // Not logged in, show login modal
-                loginModal.classList.remove('hidden');
-            }
-        });
+        // Desktop login button
+        if (loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                if (this.currentUser) {
+                    this.handleLogout();
+                } else {
+                    loginModal.classList.remove('hidden');
+                }
+            });
+        }
 
-        registerBtn.addEventListener('click', () => {
-            registerModal.classList.remove('hidden');
-        });
+        // Mobile login button
+        if (loginBtnMobile) {
+            loginBtnMobile.addEventListener('click', () => {
+                if (this.currentUser) {
+                    this.handleLogout();
+                } else {
+                    loginModal.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Desktop register button
+        if (registerBtn) {
+            registerBtn.addEventListener('click', () => {
+                registerModal.classList.remove('hidden');
+            });
+        }
+
+        // Mobile register button  
+        if (registerBtnMobile) {
+            registerBtnMobile.addEventListener('click', () => {
+                registerModal.classList.remove('hidden');
+            });
+        }
 
         cancelLogin.addEventListener('click', () => {
             loginModal.classList.add('hidden');
@@ -600,15 +624,45 @@ class QAAutomationApp {
     updateUIForUser() {
         const loginBtn = document.getElementById('loginBtn');
         const registerBtn = document.getElementById('registerBtn');
+        const loginBtnMobile = document.getElementById('loginBtnMobile');
+        const registerBtnMobile = document.getElementById('registerBtnMobile');
         
         if (this.currentUser) {
-            loginBtn.innerHTML = `<i class="fas fa-sign-out-alt mr-2"></i>Logout (${this.currentUser.username})`;
-            loginBtn.className = 'bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors';
-            registerBtn.style.display = 'none';
+            // Update desktop buttons
+            if (loginBtn) {
+                loginBtn.innerHTML = `<i class="fas fa-sign-out-alt mr-2"></i>Logout (${this.currentUser.username})`;
+                loginBtn.className = 'bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors';
+            }
+            if (registerBtn) {
+                registerBtn.style.display = 'none';
+            }
+            
+            // Update mobile buttons
+            if (loginBtnMobile) {
+                loginBtnMobile.innerHTML = `<i class="fas fa-sign-out-alt mr-1"></i>Logout`;
+                loginBtnMobile.className = 'bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm';
+            }
+            if (registerBtnMobile) {
+                registerBtnMobile.style.display = 'none';
+            }
         } else {
-            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Login';
-            loginBtn.className = 'bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors';
-            registerBtn.style.display = 'inline-block';
+            // Update desktop buttons
+            if (loginBtn) {
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Login';
+                loginBtn.className = 'bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors';
+            }
+            if (registerBtn) {
+                registerBtn.style.display = 'inline-block';
+            }
+            
+            // Update mobile buttons
+            if (loginBtnMobile) {
+                loginBtnMobile.innerHTML = '<i class="fas fa-sign-in-alt mr-1"></i>Login';
+                loginBtnMobile.className = 'bg-white text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm';
+            }
+            if (registerBtnMobile) {
+                registerBtnMobile.style.display = 'inline-block';
+            }
         }
     }
 
