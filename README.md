@@ -2,289 +2,183 @@
 
 ## Project Overview
 - **Name**: QA Automation Demo Portal
-- **Goal**: Comprehensive test automation platform for API testing, performance testing, UI testing, and reporting
-- **Features**: User authentication, API test management, performance testing, test execution tracking, and detailed reporting
+- **Goal**: Comprehensive test automation platform for API testing, performance testing, and test run management
+- **Features**: User authentication, API test creation, test execution, performance testing, test run history, responsive UI
 
-## URLs
-- **Production**: https://qa-automation-demo.pages.dev
+## 🔗 URLs
 - **GitHub Repository**: https://github.com/patr-coder/qa-automation-demo
-- **API Health**: https://qa-automation-demo.pages.dev/api/dashboard/stats
+- **Production (Cloudflare Pages)**: https://qa-automation-demo.pages.dev (Deployment in progress)
+- **Development**: Available via sandbox environment
 
-## Currently Completed Features
+## ✨ Currently Completed Features
 
-### ✅ User Management & Authentication
-- User registration with role-based access (Tester, Developer, Admin)
-- User login with credential validation
-- **User logout functionality** with proper session cleanup and audit logging
-- Terms & conditions acceptance tracking
-- Newsletter subscription management
+### 🔐 User Management
+- User registration with email, username, password
+- Secure login/logout with session management
+- User type selection (QA Engineer, Developer, Manager, etc.)
 - Audit logging for user activities
 
-### ✅ API Testing Framework
-- **Create API Tests**: Configure endpoint URL, HTTP methods, request bodies, headers
-- **Execute API Tests**: Real-time test execution with response validation
-- **Response Validation**: Status code checking, response time validation, content-type verification
-- **Test Management**: Save, organize, and reuse API test configurations
-- **Test History**: Track all test executions with detailed results
+### 🧪 API Testing
+- **Create API Tests**: Define endpoint URL, HTTP method, request body
+- **Execute Tests**: Run saved tests or quick tests
+- **Test Management**: View, run, and delete saved API tests
+- **Response Analysis**: Status codes, response times, success/failure tracking
 
-### ✅ Performance Testing
-- **Load Testing**: Configure virtual users (1-1000) and test duration
-- **Metrics Collection**: Response time statistics (avg, min, max, 95th percentile)
-- **Throughput Analysis**: Requests per second and error rate tracking
-- **Real-time Results**: Live performance metrics during test execution
+### 📊 Test Run Management
+- **Test History**: Complete history of all test executions
+- **Detailed View**: Comprehensive test run details with metrics
+- **Pagination**: 10 items per page with navigation controls
+- **Delete Functionality**: Remove test runs with confirmation dialogs
 
-### ✅ Dashboard & Analytics
-- **Real-time Statistics**: Active users, total tests, test runs, success rates
-- **Test Execution Table**: Recent test runs with status, duration, and success rates
-- **Pagination Support**: Navigate through test results with 10 items per page
-- **Visual Metrics**: Color-coded status indicators and performance charts
+### 🚀 Performance Testing
+- **Load Testing**: Configure virtual users and test duration
+- **Metrics Collection**: Average response time, requests per second, P95 times, error rates
+- **Results Display**: Real-time performance metrics visualization
 
-### ✅ UI Testing Interface
-- **Form Testing**: Username, email, password field validation
-- **User Type Selection**: Dropdown testing for different user roles
-- **Checkbox Validation**: Terms acceptance and newsletter subscription testing
-- **Registration Flow**: Complete user registration process testing
+### 📱 Responsive UI Design
+- **Desktop Layout**: Optimized for desktop with proper card layouts and button positioning
+- **Mobile Layout**: Full mobile responsiveness with collapsible navigation
+- **Interactive Elements**: Hover effects, color-coded HTTP methods, clean typography
+- **Notification System**: Toast notifications for user feedback
 
-### ✅ Reporting & Documentation
-- **Test Reports**: Generate detailed execution reports
-- **Export Functionality**: Report generation with timestamps and statistics
-- **Execution History**: Comprehensive test run tracking and analysis
+### 🎯 Recent UI Enhancements
+- **Fixed Button Positioning**: Resolved delete buttons appearing outside cards in desktop mode
+- **Enhanced API Cards**: Color-coded HTTP method badges (GET=blue, POST=green, PUT=yellow, DELETE=red)
+- **JSON Preview**: Smart formatting and truncation of request body content
+- **Improved Grid**: Responsive grid layout (1 col mobile → 2 cols tablet → 3 cols desktop)
 
-## Functional Entry URIs
+## 🗄️ Data Architecture
 
-### Authentication Endpoints
-- `POST /api/auth/login` - User authentication
-  - **Parameters**: `{username, password}`
+### **Database**: Cloudflare D1 (SQLite-based)
+- **Schema**: 11 tables with complete relational structure
+- **Tables**: users, api_tests, test_runs, performance_runs, test_results, performance_metrics, audit_logs, user_sessions, test_environments, test_data, test_schedules
+
+### **Storage Services Used**
+- **Cloudflare D1**: Relational data (users, tests, results)
+- **Local Development**: SQLite with `--local` flag for development
+
+### **Data Models**
+- **User Model**: Authentication, profile, audit tracking
+- **API Test Model**: Endpoint definition, request configuration
+- **Test Run Model**: Execution results, performance metrics
+- **Performance Model**: Load testing results and analytics
+
+## 🛠️ Tech Stack
+- **Backend**: Hono Framework (TypeScript)
+- **Frontend**: Vanilla JavaScript, TailwindCSS, Font Awesome
+- **Database**: Cloudflare D1 (SQLite)
+- **Deployment**: Cloudflare Pages with Workers
+- **Build Tool**: Vite with Cloudflare Pages adapter
+- **Version Control**: Git with GitHub integration
+
+## 📋 Functional Entry URIs
+
+### Authentication APIs
 - `POST /api/auth/register` - User registration
-  - **Parameters**: `{username, email, password, user_type, accepted_terms, subscribed_newsletter}`
-- `POST /api/auth/logout` - User logout with audit logging
-  - **Parameters**: `{user_id}`
+- `POST /api/auth/login` - User login  
+- `POST /api/auth/logout` - User logout (with audit logging)
 
-### API Testing Endpoints
-- `GET /api/tests?page=X&limit=Y` - Retrieve saved API tests with pagination
-  - **Query Parameters**: `page` (default: 1), `limit` (default: 10)
+### API Testing
+- `GET /api/tests` - List API tests (paginated)
 - `POST /api/tests` - Create new API test
-  - **Parameters**: `{name, endpoint_url, http_method, request_body, owner_user_id}`
-- `POST /api/tests/:id/run` - Execute specific API test
-  - **Parameters**: `{started_by}`
+- `POST /api/tests/:id/run` - Execute specific test
+- `DELETE /api/tests/:id` - Delete API test
 
-### Performance Testing Endpoints
+### Test Runs
+- `GET /api/runs` - List test runs (paginated) 
+- `GET /api/runs/:id` - Get detailed test run information
+- `DELETE /api/runs/:id` - Delete test run
+
+### Performance Testing
 - `POST /api/performance/run` - Execute performance test
-  - **Parameters**: `{virtual_users, test_duration_seconds, endpoint_url, started_by}`
 
-### Dashboard & Analytics Endpoints
-- `GET /api/dashboard/stats` - Retrieve dashboard statistics
-- `GET /api/runs?page=X&limit=Y` - Get test execution results with pagination
-  - **Query Parameters**: `page` (default: 1), `limit` (default: 10)
+### Dashboard
+- `GET /api/dashboard/stats` - Get dashboard statistics
 
-### Utility Endpoints
-- `POST /api/newsletter/subscribe` - Newsletter subscription
-  - **Parameters**: `{email}`
-
-## Data Architecture
-
-### Data Models
-- **Users**: Authentication, roles, preferences, activity tracking
-- **API Tests**: Test configurations, endpoints, validation rules
-- **Test Runs**: Execution instances, results, performance metrics
-- **Test Suites**: Grouped test collections for organized execution
-- **Performance Runs**: Load testing results and metrics
-- **Audit Logs**: User activity and system operation tracking
-
-### Storage Services
-- **Cloudflare D1**: Main relational database for all application data
-- **Local Development**: SQLite database with `--local` flag for development
-- **Data Persistence**: User accounts, test configurations, execution history, performance metrics
-
-### Data Flow
-1. **User Registration/Login** → User data stored in D1 database
-2. **API Test Creation** → Test configuration saved with user association
-3. **Test Execution** → Real API calls with response logging to database
-4. **Performance Testing** → Simulated load testing with metrics storage
-5. **Dashboard Updates** → Real-time statistics calculated from database queries
-6. **Report Generation** → Historical data aggregation and analysis
-
-## User Guide
+## 👥 User Guide
 
 ### Getting Started
-1. **Register Account**: Click "Register" and create your tester account
-2. **Login**: Use your credentials to access the platform
-3. **Dashboard**: View overall system statistics and recent test activity
+1. **Register**: Create account with email, username, and password
+2. **Login**: Access the platform with your credentials
+3. **Navigate**: Use the top navigation to access different features
 
-### API Testing Workflow
-1. **Navigate to API Testing Tab**
-2. **Configure Test**: Enter endpoint URL, select HTTP method, add request body
-3. **Set Validation Rules**: Configure expected status codes, response times
-4. **Save Test**: Store configuration for reuse
-5. **Run Test**: Execute immediately or run saved tests
-6. **View Results**: Check response times, status codes, and validation results
+### Creating API Tests
+1. Go to **API Testing** tab
+2. Fill in **Test Name**, **API Endpoint**, and **HTTP Method**
+3. Add **Request Body** if needed (JSON format)
+4. Click **Create Test** to save, or **Run Test** to execute immediately
 
-### Performance Testing Process
-1. **Go to Performance Tab**
-2. **Configure Load Test**: Set target URL, virtual users (1-1000), duration
-3. **Start Test**: Execute load testing simulation
-4. **Monitor Metrics**: View real-time response times, throughput, error rates
-5. **Analyze Results**: Review average response times, 95th percentile, requests/second
+### Running Tests
+- **Quick Test**: Configure and run immediately from API Testing tab
+- **Saved Tests**: Click **Run** button on any saved test card
+- **View Results**: Check response time, status code, and success/failure
 
-### UI Testing Features
-1. **Access UI Testing Tab**
-2. **Test Form Validation**: Use the registration form to test field validation
-3. **Simulate User Input**: Test different user types, email formats, password requirements
-4. **Verify Checkbox Logic**: Test terms acceptance and newsletter subscription
+### Managing Test History
+1. Go to **Test Results** tab to see all test runs
+2. Click **View Details** to see comprehensive test information
+3. Use **Delete** button to remove test runs
+4. Navigate through pages using **Previous/Next** buttons
 
-### Report Generation
-1. **Navigate to Reports Tab**
-2. **Generate Report**: Click "Generate Detailed Report" for comprehensive analysis
-3. **Review Analytics**: View execution summaries, success rates, performance trends
+### Performance Testing
+1. Go to **Performance Testing** tab
+2. Set **API Endpoint**, **Virtual Users**, and **Test Duration**
+3. Click **Run Performance Test**
+4. View results: Average time, requests/sec, P95 time, error rate
 
-## Demo Data Available
+## 🚀 Deployment Status
+- **Platform**: Cloudflare Pages
+- **Status**: 🔄 In Progress (GitHub Integration Setup)
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Framework**: Hono with Vite
+- **Database**: Cloudflare D1 (Production binding required)
 
-### Pre-configured Users
-- **demo_admin** (admin@qademo.com) - Administrator account
-- **test_engineer1** (engineer1@qademo.com) - Tester account
-- **test_engineer2** (engineer2@qademo.com) - Tester account
-- **developer1** (dev1@qademo.com) - Developer account
+## 📈 Next Development Steps
 
-### Sample API Tests
-- **Login API Test** - POST endpoint testing
-- **Get User Profile** - GET endpoint validation
-- **Create Post API** - Resource creation testing
-- **Update User Info** - PUT endpoint testing
+### Immediate Priorities
+1. **Complete Cloudflare Pages Deployment** with GitHub integration
+2. **Setup Production D1 Database** with migration application
+3. **Configure Environment Variables** for production
+4. **Test Live Functionality** end-to-end
 
-### Test Execution History
-- Multiple test runs with various success/failure scenarios
-- Performance test baselines with 100 virtual users
-- Response time metrics and error rate tracking
+### Future Enhancements
+1. **Real-time Test Monitoring** with WebSocket integration
+2. **Test Scheduling** for automated test execution
+3. **Advanced Reporting** with PDF generation
+4. **Team Collaboration** features with shared workspaces
+5. **API Documentation** generation from test definitions
+6. **Integration Testing** with CI/CD pipeline support
 
-## Deployment
+## 🔧 Development Commands
 
-### Platform
-- **Environment**: Cloudflare Pages with Hono framework
-- **Database**: Cloudflare D1 (SQLite-based distributed database)
-- **Status**: ✅ Active and fully functional
-- **Tech Stack**: Hono + TypeScript + TailwindCSS + FontAwesome + Axios
-
-### Local Development
 ```bash
-# Start development server
-npm run dev:sandbox
+# Local Development
+npm run dev                    # Start Vite dev server
+npm run dev:sandbox           # Start wrangler in sandbox
+npm run build                 # Build for production
+npm run deploy               # Deploy to Cloudflare Pages
 
-# Run database migrations
-npm run db:migrate:local
+# Database Management  
+npm run db:migrate:local     # Apply migrations locally
+npm run db:migrate:prod      # Apply migrations to production
+npm run db:seed              # Seed test data
+npm run db:reset             # Reset local database
 
-# Seed demo data
-npm run db:seed
-
-# Reset database
-npm run db:reset
+# Git Operations
+npm run git:status           # Check git status  
+npm run git:commit "message" # Quick commit
 ```
 
-### Production Deployment
-```bash
-# Build and deploy to Cloudflare Pages
-npm run deploy:prod
+## 📊 Current Statistics
+- **Database Tables**: 11 comprehensive tables
+- **API Endpoints**: 12 RESTful endpoints
+- **Frontend Components**: Responsive design with 5 main sections
+- **Test Coverage**: Full CRUD operations for all entities
+- **UI Components**: Mobile-responsive with desktop optimization
 
-# Apply production database migrations
-npm run db:migrate:prod
-```
+---
 
-## Features Not Yet Implemented
-
-### Advanced API Testing
-- [ ] **JSON Schema Validation**: Deep response structure validation
-- [ ] **Authentication Headers**: OAuth, Bearer token, API key management
-- [ ] **Test Chaining**: Sequential test execution with data passing
-- [ ] **Mock Server Integration**: Create mock endpoints for testing
-
-### Enhanced Performance Testing
-- [ ] **Real Load Testing**: Integration with actual load testing tools
-- [ ] **Geographic Testing**: Multi-region performance analysis
-- [ ] **Custom Scenarios**: Complex user journey simulation
-- [ ] **Stress Testing**: System breaking point analysis
-
-### Advanced Reporting
-- [ ] **PDF Export**: Professional report generation
-- [ ] **Email Reports**: Scheduled report delivery
-- [ ] **Trend Analysis**: Historical performance tracking
-- [ ] **Custom Dashboards**: Personalized metric views
-
-### Enterprise Features
-- [ ] **Team Management**: Multi-user project organization
-- [ ] **CI/CD Integration**: GitHub Actions, Jenkins integration
-- [ ] **API Documentation**: Swagger/OpenAPI integration
-- [ ] **Advanced Analytics**: Machine learning insights
-
-## Recommended Next Steps for Development
-
-### Immediate Improvements (Sprint 1)
-1. **Real API Key Management**: Implement secure token storage for external APIs
-2. **Enhanced Validation Rules**: Add JSON schema validation for responses
-3. **Test Suite Management**: Group related tests into executable suites
-4. **Real-time Updates**: WebSocket integration for live test execution updates
-
-### Medium-term Enhancements (Sprint 2-3)
-1. **Advanced Performance Testing**: Integration with K6 or Artillery for real load testing
-2. **CI/CD Pipeline Integration**: GitHub Actions workflow for automated testing
-3. **Advanced Reporting**: PDF generation and scheduled report delivery
-4. **User Permissions**: Role-based access control and team management
-
-### Long-term Vision (Sprint 4+)
-1. **AI-Powered Testing**: Intelligent test case generation and anomaly detection
-2. **Multi-Environment Support**: Development, staging, production environment management
-3. **Integration Hub**: Connectors for popular testing tools (Postman, Newman, JMeter)
-4. **Compliance & Security**: SOC2, GDPR compliance features
-
-### Technical Debt & Optimization
-1. **Password Security**: Implement proper bcrypt hashing (currently demo hashes)
-2. **Rate Limiting**: Add API rate limiting and abuse prevention
-3. **Caching Layer**: Implement Redis/KV caching for performance optimization
-4. **Error Handling**: Comprehensive error logging and user feedback
-
-## Recent Updates
-
-### Version 1.2.4 - Enhanced API Test Cards (September 26, 2025)
-- 🎨 **Improved Card Design**: Enhanced layout with clear sections for Test Name, API Endpoint, HTTP Method, and Request Body
-- 🏷️ **Color-Coded HTTP Methods**: Visual badges for different methods (GET=blue, POST=green, PUT=yellow, DELETE=red)
-- 📝 **Request Body Preview**: JSON formatting with syntax highlighting and smart truncation
-- 📱 **Better Responsive Grid**: Optimized layout (1 col mobile, 2 cols tablet, 2-3 cols desktop)
-- 🎯 **Enhanced Visual Hierarchy**: Better typography, spacing, and content organization
-
-### Version 1.2.3 - Mobile Responsive Design Fixed (September 26, 2025)
-- 📱 **Mobile Layout Fixed**: Register button now visible and functional on mobile devices
-- ✅ **Responsive Header Design**: Separate optimized layouts for desktop and mobile screens
-- ✅ **Complete Button Functionality**: Both Login and Register buttons work across all screen sizes  
-- ✅ **Professional Mobile UI**: Compact design with proper spacing and typography
-- ✅ **Enhanced User Experience**: Seamless interaction on smartphones and tablets
-
-### Version 1.2.2 - Fixed View Details Functionality (September 26, 2025)
-- 🔧 **View Details Bug Fixes**: Resolved API endpoint table name issue (performance_metrics → performance_runs)
-- ✅ **Working View Details Modal**: Comprehensive test run information display now fully functional
-- ✅ **Robust Error Handling**: Enhanced JavaScript with safe DOM manipulation and detailed logging
-- ✅ **API Endpoint Fixed**: View Details API now returns complete test run data with metrics
-- ✅ **Production Ready**: Both View Details and Delete functionality fully operational
-
-### Version 1.2.1 - Fixed Delete Functionality (September 26, 2025)  
-- 🔧 **Delete Bug Fixes**: Resolved delete button functionality issues with simplified backend logic
-- ✅ **Working Delete Operations**: Both test run and API test deletion now fully functional
-- ✅ **Enhanced Error Handling**: Better error messages and debugging for delete operations
-- ✅ **Streamlined Code**: Simplified delete endpoints for better reliability and performance
-- ✅ **Verified Testing**: Delete functionality tested and confirmed working in production
-
-### Version 1.2.0 - View Details & Delete Features (September 26, 2025)
-- ✅ **View Details Modal**: Comprehensive test run information with API configuration and performance metrics
-- ✅ **Delete Functionality**: Delete test runs and API tests with confirmation dialogs and audit logging
-- ✅ **Enhanced Action Buttons**: Improved Run and Delete button styling with better spacing and hover effects
-- ✅ **Security Features**: Authentication required for deletions, proper error handling, and user notifications
-- ✅ **Backend API Extensions**: New endpoints for viewing details and deletion operations
-
-### Version 1.1.0 - Logout & Pagination Features (September 26, 2025)  
-- ✅ **Added User Logout Functionality**: Complete logout with audit logging and UI state management
-- ✅ **Implemented Pagination**: Tables now show 10 items per page with Previous/Next navigation
-- ✅ **Enhanced API Endpoints**: All list endpoints now support pagination query parameters
-- ✅ **Database Connection Fixed**: Resolved local development database issues by deploying to production
-- ✅ **Production Deployment**: Successfully deployed with Cloudflare D1 database integration
-
-## Last Updated
-**Date**: September 26, 2025
-**Version**: 1.2.4 - Enhanced API Test Cards UI
-**Status**: Production Ready with Professional Card Design & Full Functionality
+**Last Updated**: September 28, 2025  
+**Version**: 1.0.0  
+**License**: MIT  
+**Maintainer**: Patrick M (Engineering Director)
