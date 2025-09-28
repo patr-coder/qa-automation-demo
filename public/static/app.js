@@ -684,10 +684,18 @@ class QAAutomationApp {
     
     async deleteTestRun(runId) {
         try {
-            await axios.delete(`/api/runs/${runId}`, {
+            console.log('Deleting run:', runId, 'Current user:', this.currentUser);
+            
+            if (!this.currentUser || !this.currentUser.id) {
+                this.showNotification('Please login first to delete test runs', 'error');
+                return;
+            }
+            
+            const response = await axios.delete(`/api/runs/${runId}`, {
                 data: { user_id: this.currentUser.id }
             });
             
+            console.log('Delete response:', response.data);
             this.showNotification('Test run deleted successfully', 'success');
             
             // Refresh the test runs table
@@ -698,7 +706,12 @@ class QAAutomationApp {
             
         } catch (error) {
             console.error('Error deleting test run:', error);
-            this.showNotification('Failed to delete test run', 'error');
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                this.showNotification(`Failed to delete test run: ${error.response.data.error}`, 'error');
+            } else {
+                this.showNotification('Failed to delete test run: Network error', 'error');
+            }
         }
     }
     
@@ -717,10 +730,18 @@ class QAAutomationApp {
     
     async deleteAPITest(testId) {
         try {
-            await axios.delete(`/api/tests/${testId}`, {
+            console.log('Deleting test:', testId, 'Current user:', this.currentUser);
+            
+            if (!this.currentUser || !this.currentUser.id) {
+                this.showNotification('Please login first to delete API tests', 'error');
+                return;
+            }
+            
+            const response = await axios.delete(`/api/tests/${testId}`, {
                 data: { user_id: this.currentUser.id }
             });
             
+            console.log('Delete response:', response.data);
             this.showNotification('API test deleted successfully', 'success');
             
             // Refresh the API tests
@@ -731,7 +752,12 @@ class QAAutomationApp {
             
         } catch (error) {
             console.error('Error deleting API test:', error);
-            this.showNotification('Failed to delete API test', 'error');
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                this.showNotification(`Failed to delete API test: ${error.response.data.error}`, 'error');
+            } else {
+                this.showNotification('Failed to delete API test: Network error', 'error');
+            }
         }
     }
     
