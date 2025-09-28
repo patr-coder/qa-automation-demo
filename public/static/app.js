@@ -467,11 +467,11 @@ class QAAutomationApp {
 
             // Create tests grid
             const testsGrid = document.createElement('div');
-            testsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6';
+            testsGrid.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6';
 
             tests.forEach(test => {
                 const testCard = document.createElement('div');
-                testCard.className = 'bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow';
+                testCard.className = 'bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow relative overflow-hidden';
                 
                 // Parse and display request body if available
                 let requestBodyDisplay = '';
@@ -500,33 +500,37 @@ class QAAutomationApp {
                 }
                 
                 testCard.innerHTML = `
-                    <div class="mb-4">
-                        <h4 class="font-bold text-lg text-gray-900 mb-3">${test.name}</h4>
-                        
-                        <div class="space-y-2 mb-4">
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 mb-1">API Endpoint:</p>
-                                <p class="text-sm text-gray-700 break-all">${test.endpoint_url}</p>
+                    <div class="h-full flex flex-col">
+                        <div class="flex-1 mb-4">
+                            <h4 class="font-bold text-lg text-gray-900 mb-3 break-words">${test.name}</h4>
+                            
+                            <div class="space-y-2 mb-4">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 mb-1">API Endpoint:</p>
+                                    <p class="text-sm text-gray-700 break-all">${test.endpoint_url}</p>
+                                </div>
+                                
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 mb-1">HTTP Method:</p>
+                                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${this.getMethodColor(test.http_method)}">${test.http_method}</span>
+                                </div>
                             </div>
                             
-                            <div>
-                                <p class="text-xs font-medium text-gray-500 mb-1">HTTP Method:</p>
-                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${this.getMethodColor(test.http_method)}">${test.http_method}</span>
-                            </div>
+                            ${requestBodyDisplay}
                         </div>
                         
-                        ${requestBodyDisplay}
-                    </div>
-                    
-                    <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-                        <span class="text-xs text-gray-400">by ${test.owner_name}</span>
-                        <div class="flex space-x-2">
-                            <button onclick="app.runSavedTest(${test.id})" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200 shadow-sm flex items-center">
-                                <i class="fas fa-play mr-2"></i>Run
-                            </button>
-                            <button onclick="app.confirmDeleteTest(${test.id}, '${test.name}')" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors duration-200 shadow-sm flex items-center">
-                                <i class="fas fa-trash mr-2"></i>Delete
-                            </button>
+                        <div class="mt-auto pt-3 border-t border-gray-100">
+                            <div class="flex flex-col gap-3">
+                                <span class="text-xs text-gray-400">by ${test.owner_name}</span>
+                                <div class="flex gap-2 w-full">
+                                    <button onclick="app.runSavedTest(${test.id})" class="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors duration-200 shadow-sm flex items-center justify-center">
+                                        <i class="fas fa-play mr-2"></i>Run
+                                    </button>
+                                    <button onclick="app.confirmDeleteTest(${test.id}, '${test.name}')" class="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors duration-200 shadow-sm flex items-center justify-center">
+                                        <i class="fas fa-trash mr-2"></i>Delete
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
