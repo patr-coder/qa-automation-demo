@@ -242,6 +242,13 @@ npm run db:migrate:prod
 
 ## Recent Updates
 
+### Version 1.2.1 - Fixed Delete Functionality (September 26, 2025)
+- 🔧 **Delete Bug Fixes**: Resolved delete button functionality issues with simplified backend logic
+- ✅ **Working Delete Operations**: Both test run and API test deletion now fully functional
+- ✅ **Enhanced Error Handling**: Better error messages and debugging for delete operations
+- ✅ **Streamlined Code**: Simplified delete endpoints for better reliability and performance
+- ✅ **Verified Testing**: Delete functionality tested and confirmed working in production
+
 ### Version 1.2.0 - View Details & Delete Features (September 26, 2025)
 - ✅ **View Details Modal**: Comprehensive test run information with API configuration and performance metrics
 - ✅ **Delete Functionality**: Delete test runs and API tests with confirmation dialogs and audit logging
@@ -258,5 +265,5 @@ npm run db:migrate:prod
 
 ## Last Updated
 **Date**: September 26, 2025
-**Version**: 1.2.0 - View Details & Delete Update  
-**Status**: Production Ready with Advanced User Interface Features
+**Version**: 1.2.1 - Delete Functionality Fixed
+**Status**: Production Ready with Fully Functional Delete Operations
