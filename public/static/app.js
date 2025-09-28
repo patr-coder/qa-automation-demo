@@ -614,58 +614,91 @@ class QAAutomationApp {
 
     async viewTestRunDetails(runId) {
         try {
+            console.log('Attempting to view details for run:', runId);
+            
             const response = await axios.get(`/api/runs/${runId}`);
+            console.log('API response:', response.data);
+            
             const { run, metrics } = response.data;
             
+            if (!run) {
+                throw new Error('No run data received from API');
+            }
+            
+            // Helper function to safely set text content
+            const safeSetText = (elementId, text) => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = text;
+                } else {
+                    console.warn(`Element with ID '${elementId}' not found`);
+                }
+            };
+            
             // Populate modal with run details
-            document.getElementById('detailTestName').textContent = run.test_name || 'Unknown Test';
-            document.getElementById('detailRunId').textContent = run.id;
-            document.getElementById('detailStatus').textContent = run.status.toUpperCase();
-            document.getElementById('detailStartedBy').textContent = run.started_by_name;
-            document.getElementById('detailStartedAt').textContent = new Date(run.started_at).toLocaleString();
-            document.getElementById('detailFinishedAt').textContent = run.finished_at ? new Date(run.finished_at).toLocaleString() : 'Not finished';
-            document.getElementById('detailDuration').textContent = run.duration_ms ? (run.duration_ms / 1000).toFixed(1) + ' seconds' : 'Not available';
-            document.getElementById('detailSuccessRate').textContent = run.success_rate ? run.success_rate.toFixed(1) + '%' : 'Not available';
+            safeSetText('detailTestName', run.test_name || 'Unknown Test');
+            safeSetText('detailRunId', run.id || 'N/A');
+            safeSetText('detailStatus', (run.status || 'unknown').toUpperCase());
+            safeSetText('detailStartedBy', run.started_by_name || 'Unknown');
+            safeSetText('detailStartedAt', run.started_at ? new Date(run.started_at).toLocaleString() : 'Not available');
+            safeSetText('detailFinishedAt', run.finished_at ? new Date(run.finished_at).toLocaleString() : 'Not finished');
+            safeSetText('detailDuration', run.duration_ms ? (run.duration_ms / 1000).toFixed(1) + ' seconds' : 'Not available');
+            safeSetText('detailSuccessRate', run.success_rate ? run.success_rate.toFixed(1) + '%' : 'Not available');
             
             // API Test details
-            if (run.endpoint_url) {
-                document.getElementById('detailEndpoint').textContent = run.endpoint_url;
-                document.getElementById('detailHttpMethod').textContent = run.http_method || 'GET';
-                document.getElementById('detailHeaders').textContent = run.request_headers || '{}';
-                document.getElementById('detailRequestBody').textContent = run.request_body || '(empty)';
-                document.getElementById('apiTestDetails').classList.remove('hidden');
-            } else {
-                document.getElementById('apiTestDetails').classList.add('hidden');
+            const apiTestDetails = document.getElementById('apiTestDetails');
+            if (run.endpoint_url && apiTestDetails) {
+                safeSetText('detailEndpoint', run.endpoint_url);
+                safeSetText('detailHttpMethod', run.http_method || 'GET');
+                safeSetText('detailHeaders', run.request_headers || '{}');
+                safeSetText('detailRequestBody', run.request_body || '(empty)');
+                apiTestDetails.classList.remove('hidden');
+            } else if (apiTestDetails) {
+                apiTestDetails.classList.add('hidden');
             }
             
             // Performance metrics
-            document.getElementById('detailTotalRequests').textContent = run.total_requests || 0;
-            document.getElementById('detailSuccessCount').textContent = run.success_count || 0;
-            document.getElementById('detailFailedCount').textContent = run.failed_count || 0;
-            document.getElementById('detailSkippedCount').textContent = run.skipped_count || 0;
+            safeSetText('detailTotalRequests', run.total_requests || 0);
+            safeSetText('detailSuccessCount', run.success_count || 0);
+            safeSetText('detailFailedCount', run.failed_count || 0);
+            safeSetText('detailSkippedCount', run.skipped_count || 0);
             
             // Additional metrics if available
-            if (metrics && metrics.length > 0) {
-                const metricsContent = document.getElementById('metricsContent');
+            const additionalMetrics = document.getElementById('additionalMetrics');
+            const metricsContent = document.getElementById('metricsContent');
+            
+            if (metrics && metrics.length > 0 && metricsContent && additionalMetrics) {
                 metricsContent.innerHTML = metrics.map(metric => `
                     <div class="mb-2">
-                        <span class="font-medium">${metric.metric_name}:</span> ${metric.metric_value}
+                        <span class="font-medium">${metric.metric_name || 'Unknown Metric'}:</span> ${metric.metric_value || 'N/A'}
                     </div>
                 `).join('');
-                document.getElementById('additionalMetrics').classList.remove('hidden');
-            } else {
-                document.getElementById('additionalMetrics').classList.add('hidden');
+                additionalMetrics.classList.remove('hidden');
+            } else if (additionalMetrics) {
+                additionalMetrics.classList.add('hidden');
             }
             
             // Store run ID for delete action
             this.currentRunId = runId;
             
             // Show modal
-            document.getElementById('viewDetailsModal').classList.remove('hidden');
+            const modal = document.getElementById('viewDetailsModal');
+            if (modal) {
+                console.log('Opening View Details modal');
+                modal.classList.remove('hidden');
+                this.showNotification('Test run details loaded successfully', 'success');
+            } else {
+                throw new Error('View Details modal element not found');
+            }
             
         } catch (error) {
             console.error('Error fetching run details:', error);
-            this.showNotification('Failed to load test run details', 'error');
+            if (error.response) {
+                console.error('API Error:', error.response.data);
+                this.showNotification(`Failed to load test run details: ${error.response.data.error}`, 'error');
+            } else {
+                this.showNotification('Failed to load test run details: ' + error.message, 'error');
+            }
         }
     }
     
