@@ -242,7 +242,14 @@ npm run db:migrate:prod
 
 ## Recent Updates
 
-### Version 1.1.0 - Logout & Pagination Features (September 26, 2025)
+### Version 1.2.0 - View Details & Delete Features (September 26, 2025)
+- ✅ **View Details Modal**: Comprehensive test run information with API configuration and performance metrics
+- ✅ **Delete Functionality**: Delete test runs and API tests with confirmation dialogs and audit logging
+- ✅ **Enhanced Action Buttons**: Improved Run and Delete button styling with better spacing and hover effects
+- ✅ **Security Features**: Authentication required for deletions, proper error handling, and user notifications
+- ✅ **Backend API Extensions**: New endpoints for viewing details and deletion operations
+
+### Version 1.1.0 - Logout & Pagination Features (September 26, 2025)  
 - ✅ **Added User Logout Functionality**: Complete logout with audit logging and UI state management
 - ✅ **Implemented Pagination**: Tables now show 10 items per page with Previous/Next navigation
 - ✅ **Enhanced API Endpoints**: All list endpoints now support pagination query parameters
@@ -251,5 +258,5 @@ npm run db:migrate:prod
 
 ## Last Updated
 **Date**: September 26, 2025
-**Version**: 1.1.0 - Logout & Pagination Update
-**Status**: Production Ready with Full Database Connectivity
+**Version**: 1.2.0 - View Details & Delete Update  
+**Status**: Production Ready with Advanced User Interface Features
