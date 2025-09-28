@@ -170,7 +170,7 @@ app.get('/api/runs/:id', async (c) => {
     
     // Get performance metrics for this run if available
     const metrics = await c.env.DB.prepare(`
-      SELECT * FROM performance_metrics 
+      SELECT * FROM performance_runs 
       WHERE test_run_id = ?
     `).bind(runId).all()
     
