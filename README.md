@@ -242,6 +242,13 @@ npm run db:migrate:prod
 
 ## Recent Updates
 
+### Version 1.2.3 - Mobile Responsive Design Fixed (September 26, 2025)
+- 📱 **Mobile Layout Fixed**: Register button now visible and functional on mobile devices
+- ✅ **Responsive Header Design**: Separate optimized layouts for desktop and mobile screens
+- ✅ **Complete Button Functionality**: Both Login and Register buttons work across all screen sizes  
+- ✅ **Professional Mobile UI**: Compact design with proper spacing and typography
+- ✅ **Enhanced User Experience**: Seamless interaction on smartphones and tablets
+
 ### Version 1.2.2 - Fixed View Details Functionality (September 26, 2025)
 - 🔧 **View Details Bug Fixes**: Resolved API endpoint table name issue (performance_metrics → performance_runs)
 - ✅ **Working View Details Modal**: Comprehensive test run information display now fully functional
@@ -272,5 +279,5 @@ npm run db:migrate:prod
 
 ## Last Updated
 **Date**: September 26, 2025
-**Version**: 1.2.2 - View Details & Delete Both Fixed  
-**Status**: Production Ready with Complete Action Button Functionality
+**Version**: 1.2.3 - Mobile Responsive Design Complete
+**Status**: Production Ready with Full Desktop & Mobile Functionality
