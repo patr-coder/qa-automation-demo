@@ -242,7 +242,14 @@ npm run db:migrate:prod
 
 ## Recent Updates
 
-### Version 1.2.1 - Fixed Delete Functionality (September 26, 2025)
+### Version 1.2.2 - Fixed View Details Functionality (September 26, 2025)
+- 🔧 **View Details Bug Fixes**: Resolved API endpoint table name issue (performance_metrics → performance_runs)
+- ✅ **Working View Details Modal**: Comprehensive test run information display now fully functional
+- ✅ **Robust Error Handling**: Enhanced JavaScript with safe DOM manipulation and detailed logging
+- ✅ **API Endpoint Fixed**: View Details API now returns complete test run data with metrics
+- ✅ **Production Ready**: Both View Details and Delete functionality fully operational
+
+### Version 1.2.1 - Fixed Delete Functionality (September 26, 2025)  
 - 🔧 **Delete Bug Fixes**: Resolved delete button functionality issues with simplified backend logic
 - ✅ **Working Delete Operations**: Both test run and API test deletion now fully functional
 - ✅ **Enhanced Error Handling**: Better error messages and debugging for delete operations
@@ -265,5 +272,5 @@ npm run db:migrate:prod
 
 ## Last Updated
 **Date**: September 26, 2025
-**Version**: 1.2.1 - Delete Functionality Fixed
-**Status**: Production Ready with Fully Functional Delete Operations
+**Version**: 1.2.2 - View Details & Delete Both Fixed  
+**Status**: Production Ready with Complete Action Button Functionality
